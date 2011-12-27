@@ -74,9 +74,9 @@ package away3d.materials.pass
 			_specularMap = value;
 		}
 
-		arcane override function invalidateShaderProgram() : void
+		arcane override function invalidateShaderProgram(updateMaterial : Boolean = true) : void
 		{
-			super.invalidateShaderProgram();
+			super.invalidateShaderProgram(updateMaterial);
 			if (_specularMap) {
 				_numUsedTextures = _alphaThreshold > 0? 2 : 1;
 				_numUsedStreams = 2;

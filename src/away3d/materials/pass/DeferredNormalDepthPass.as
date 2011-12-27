@@ -79,9 +79,9 @@ package away3d.materials.pass
 			if (change) invalidateShaderProgram();
 		}
 
-		arcane override function invalidateShaderProgram() : void
+		arcane override function invalidateShaderProgram(updateMaterial : Boolean = true) : void
 		{
-			super.invalidateShaderProgram();
+			super.invalidateShaderProgram(updateMaterial);
 
 			if (_normalMap) {
 				_numUsedTextures = _alphaThreshold > 0? 2 : 1;
