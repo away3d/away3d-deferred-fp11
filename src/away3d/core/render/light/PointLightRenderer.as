@@ -9,7 +9,7 @@ package away3d.core.render.light
 	import away3d.core.managers.Stage3DProxy;
 	import away3d.lights.LightBase;
 	import away3d.lights.PointLight;
-	import away3d.primitives.Sphere;
+	import away3d.primitives.SphereGeometry;
 	import away3d.shadows.HardPointShadowMapFilter;
 	import away3d.shadows.PointShadowMapFilterBase;
 
@@ -69,9 +69,10 @@ package away3d.core.render.light
 			_stencilData[7] = 1;
 
 			if (!_sphereGeometry) {
-				var sphere : Sphere = new Sphere(null, 1);
-				_sphereGeometry = sphere.geometry.subGeometries[0];
-				sphere.dispose();
+				var geometry : Geometry = new SphereGeometry(1);
+				_sphereGeometry = geometry.subGeometries[0];
+				geometry.removeSubGeometry(_sphereGeometry);
+				geometry.dispose();
 			}
 		}
 
