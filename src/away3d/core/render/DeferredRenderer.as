@@ -345,7 +345,9 @@ package away3d.core.render
 				_context.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
 
 				for (i = 0; i < len; ++i) {
-					light = lights[i];
+					// the following code alternates between two buffers because we need to call context.clear()
+					// since rendering the depth map requires a new setRenderTarget call
+					light = LightBase(lights[i]);
 
 					shadowMapper = light.shadowMapper;
 					shadowMapper.setDepthMap(depthMap);
@@ -356,7 +358,6 @@ package away3d.core.render
 
 					renderer.render(light, camera, _stage3DProxy, _frustumCorners, lightAccumBuffer2);
 
-					// sadly, the fact that even texture buffers need to be cleared once set as render target forces us to swap around light buffers :(
 					temp = lightAccumBuffer2;
 					lightAccumBuffer2 = lightAccumBuffer1;
 					lightAccumBuffer1 = temp;

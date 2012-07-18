@@ -28,7 +28,7 @@ package away3d.materials.pass
 
 		public function DeferredSpecularPass()
 		{
-			_data = new <Number>[1.0/RenderValueRanges.MAX_SPECULAR, 5.0/RenderValueRanges.MAX_GLOSS, 0, 0];
+			_data = new <Number>[1.0/RenderValueRanges.MAX_SPECULAR, 50.0/RenderValueRanges.MAX_GLOSS, 0, 0];
 			_animatableAttributes = ["va0"];
 			_animationTargetRegisters = ["vt0"];
 		}
