@@ -128,11 +128,14 @@ package away3d.lights.shadowmaps
 //				_depthLenses[i].matrix = _depthLenses[i].matrix;
 				scene.traversePartitions(_casterCollector);
 				// only clear buffer once
-				renderer.render(_casterCollector, target, _scissorRects[i], 0, i == 0? 7 : 0);
+				renderer.clearOnRender = i == 0;
+				renderer.render(_casterCollector, target, _scissorRects[i], 0);
 
 //				_depthLenses[i].matrix = _depthLenses[i].matrix;
 				_casterCollector.cleanUp();
 			}
+			// be a gentleman and restore before returning
+			renderer.clearOnRender = true;
 		}
 
 		private function updateScissorRects() : void

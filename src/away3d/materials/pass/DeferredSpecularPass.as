@@ -20,7 +20,7 @@ package away3d.materials.pass
 		private var _data : Vector.<Number>;
 		private var _specularStrength : Number = 1.0;
 		private var _specularColor : uint = 0xffffff;
-		private var _gloss : Number = 5.0;
+		private var _gloss : Number = 50.0;
 		private var _specularMap : Texture2DBase;
 		private var _alphaThreshold : Number = 0;
 		private var _alphaMask : Texture2DBase;
@@ -28,6 +28,8 @@ package away3d.materials.pass
 		public function DeferredSpecularPass()
 		{
 			_data = new <Number>[1.0/RenderValueRanges.MAX_SPECULAR, 5.0/RenderValueRanges.MAX_GLOSS, 0, 0];
+			_animatableAttributes = ["va0"];
+			_animationTargetRegisters = ["vt0"];
 		}
 
 		/**
@@ -119,19 +121,19 @@ package away3d.materials.pass
 			_specularColor = value;
 		}
 
-		arcane override function getVertexCode() : String
+		arcane override function getVertexCode(animatorCode : String) : String
 		{
-            var code : String = animation.getAGALVertexCode(this, ["va0"], ["vt0"]);
+			var code : String = animatorCode;
 
-            // project
-            code += "m44 vt1, vt0, vc0		\n" +
-                    "mul op, vt1, vc4\n";
+			// project
+			code += "m44 vt1, vt0, vc0		\n" +
+					"mul op, vt1, vc4\n";
 
 			if (_specularMap || _alphaThreshold > 0) {
 				code += "mov v0, va1";
 			}
-			
-            return code;
+
+			return code;
 		}
 
 		arcane override function getFragmentCode() : String

@@ -50,7 +50,6 @@ package away3d.core.render.quad
 		override protected function getFragmentCode() : String
 		{
 			return 	"tex ft0, v0, fs0 <2d,nearest,clamp>\n" +
-
 					"mul ft5.xy, ft0.zw, fc0.xy\n" +
 					"add ft6.z, ft5.x, ft5.y\n" +
 					"mov ft6.w, fc0.w\n" +

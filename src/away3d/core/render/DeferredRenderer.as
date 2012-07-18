@@ -216,7 +216,6 @@ package away3d.core.render
 
 			if (_gBufferInvalid) updateRenderTargets();
 
-			// for now, support only deferred materials
 			renderGBuffer(entityCollector.opaqueRenderableHead, entityCollector);
 
 			_stage3DProxy.scissorRect = null;

@@ -87,20 +87,24 @@ package away3d.materials.pass
 				_numUsedTextures = _alphaThreshold > 0? 2 : 1;
 				_numUsedStreams = 4;
 				_numUsedVertexConstants = 9;
+				_animatableAttributes = ["va0", "va1", "va2" ];
+				_animationTargetRegisters = ["vt0", "vt1", "vt2" ];
 			}
 			else {
 				_numUsedTextures = _alphaThreshold > 0? 1 : 0;
 				_numUsedStreams = _alphaThreshold > 0? 3 : 2;
 				_numUsedVertexConstants = 5;
+				_animatableAttributes = ["va0", "va1"];
+				_animationTargetRegisters = ["vt0", "vt1"];
 			}
 		}
 
-		arcane override function getVertexCode() : String
+		arcane override function getVertexCode(animatorCode : String) : String
 		{
 			if (_normalMap)
-				return getNormalMapVertexCode();
+				return getNormalMapVertexCode(animatorCode);
 			else
-				return getNormalVertexCode();
+				return getNormalVertexCode(animatorCode);
 		}
 
 		arcane override function getFragmentCode() : String
@@ -111,19 +115,19 @@ package away3d.materials.pass
 				return getNormalFragmentCode();
 		}
 
-		private function getNormalVertexCode() : String
+		private function getNormalVertexCode(animatorCode : String) : String
 		{
-            var code : String = animation.getAGALVertexCode(this, ["va0", "va1"], ["vt0", "vt1"]);
+			var code : String = animatorCode;
 
 			code += "m33 v0.xyz, vt1, vc9\n" +
-                    "mov v0.w, va1.w	\n" +
-                    // send view coord for linear depth
-                    "m44 v1, vt0, vc5	\n";
-            // project
-            code += "m44 vt2, vt0, vc0		\n" +
-                    "mul op, vt2, vc4\n";
+					"mov v0.w, va1.w	\n" +
+				// send view coord for linear depth
+					"m44 v1, vt0, vc5	\n";
+			// project
+			code += "m44 vt2, vt0, vc0		\n" +
+					"mul op, vt2, vc4\n";
 
-            if (_alphaThreshold > 0) {
+			if (_alphaThreshold > 0) {
 				code += "mov v2, va3\n";
 			}
 
@@ -140,17 +144,17 @@ package away3d.materials.pass
 
 			var code : String =
 					"nrm ft0.xyz, v0.xyz\n" +
-					// encode normal
-					"mul ft1.xy, ft0.xy, fc0.zz\n" +
-					"add ft1.xy, ft1.xy, fc0.zz\n" +
+						// encode normal
+							"mul ft1.xy, ft0.xy, fc0.zz\n" +
+							"add ft1.xy, ft1.xy, fc0.zz\n" +
 
-					// encode depth
-					"mul ft0.z, v1.z, fc0.w\n" +
-					"mul ft0.xy, ft0.z, fc0.xy\n" +
-					"frc ft1.z, ft0.x\n" +
-					"frc ft1.w, ft0.y\n" +
-					"mul ft2.z, ft1.w, fc1.x\n" +
-					"sub ft1.z, ft1.z, ft2.z\n";
+						// encode depth
+							"mul ft0.z, v1.z, fc0.w\n" +
+							"mul ft0.xy, ft0.z, fc0.xy\n" +
+							"frc ft1.z, ft0.x\n" +
+							"frc ft1.w, ft0.y\n" +
+							"mul ft2.z, ft1.w, fc1.x\n" +
+							"sub ft1.z, ft1.z, ft2.z\n";
 
 			if (_alphaThreshold > 0) {
 				code +=	"tex ft3, v2, fs1 <2d,"+filter+","+wrap+">\n" +
@@ -163,9 +167,9 @@ package away3d.materials.pass
 			return code;
 		}
 
-		private function getNormalMapVertexCode() : String
+		private function getNormalMapVertexCode(animatorCode : String) : String
 		{
-            var code : String = animation.getAGALVertexCode(this, ["va0", "va1", "va2"], ["vt0", "vt1", "vt2"]);
+			var code : String = animatorCode;
 
 			// view-space position
 			code +=	"m44 v4, vt0, vc5	\n" +
@@ -195,11 +199,11 @@ package away3d.materials.pass
 
 					"mov v3, va3		\n";
 
-            // project
-            code += "m44 vt3, vt0, vc0		\n" +
-                    "mul op, vt3, vc4\n";
+			// project
+			code += "m44 vt3, vt0, vc0		\n" +
+					"mul op, vt3, vc4\n";
 
-            return code;
+			return code;
 		}
 
 		private function getNormalMapFragmentCode() : String
@@ -210,29 +214,29 @@ package away3d.materials.pass
 			if (_smooth) filter = _mipmap ? "linear,miplinear" : "linear";
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
-					// store TBN matrix
+			// store TBN matrix
 			var code : String = "nrm ft0.xyz, v1.xyz	\n" +
-								"mov ft0.w, v1.w	\n" +
-								"nrm ft1.xyz, v2.xyz	\n" +
-								"nrm ft2.xyz, v0.xyz	\n" +
+					"mov ft0.w, v1.w	\n" +
+					"nrm ft1.xyz, v2.xyz	\n" +
+					"nrm ft2.xyz, v0.xyz	\n" +
 
-								"tex ft3, v3, fs0 <2d,"+filter+","+wrap+">\n" +
+					"tex ft3, v3, fs0 <2d,"+filter+","+wrap+">\n" +
 
-								"sub ft3.xyz, ft3.xyz, fc0.zzz	\n" +
-								"nrm ft3.xyz, ft3.xyz		\n" +
-								"m33 ft3.xyz, ft3.xyz, ft0	\n" +
+					"sub ft3.xyz, ft3.xyz, fc0.zzz	\n" +
+					"nrm ft3.xyz, ft3.xyz		\n" +
+					"m33 ft3.xyz, ft3.xyz, ft0	\n" +
 
-								// encode normal
-								"mul ft3.xy, ft3.xy, fc0.zz\n" +
-								"add ft3.xy, ft3.xy, fc0.zz\n" +
+				// encode normal
+					"mul ft3.xy, ft3.xy, fc0.zz\n" +
+					"add ft3.xy, ft3.xy, fc0.zz\n" +
 
-								// encode depth
-								"mul ft0.z, v4.z, fc0.w\n" +
-								"mul ft0.xy, ft0.z, fc0.xy\n" +
-								"frc ft3.z, ft0.x\n" +
-								"frc ft3.w, ft0.y\n" +
-								"mul ft2.z, ft3.w, fc1.x\n" +
-								"sub ft3.z, ft3.z, ft2.z\n";
+				// encode depth
+					"mul ft0.z, v4.z, fc0.w\n" +
+					"mul ft0.xy, ft0.z, fc0.xy\n" +
+					"frc ft3.z, ft0.x\n" +
+					"frc ft3.w, ft0.y\n" +
+					"mul ft2.z, ft3.w, fc1.x\n" +
+					"sub ft3.z, ft3.z, ft2.z\n";
 
 			if (_alphaThreshold > 0) {
 				code +=	"tex ft1, v3, fs1 <2d,"+filter+","+wrap+">\n" +

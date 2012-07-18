@@ -26,6 +26,8 @@ package away3d.materials.pass
 			_numUsedStreams = 2;	// vertex and uv
 			_numUsedTextures = 1;
 			_data = new <Number>[0, 0, 0, 0];
+			_animatableAttributes = ["va0"];
+			_animationTargetRegisters = ["vt0"];
 		}
 
 		/**
@@ -61,15 +63,15 @@ package away3d.materials.pass
 			_texture = value;
 		}
 
-		arcane override function getVertexCode() : String
+		arcane override function getVertexCode(animatorCode : String) : String
 		{
-            var code : String = animation.getAGALVertexCode(this, ["va0"], ["vt0"]);
-            // project
-            code += "m44 vt1, vt0, vc0		\n" +
-                    "mul op, vt1, vc4\n";
+			var code : String = animatorCode;
+			// project
+			code += "m44 vt1, vt0, vc0\n" +
+					"mul op, vt1, vc4\n";
 			// only need to copy uv coords
 			code += "mov v0, va1\n";
-            return code;
+			return code;
 		}
 
 		arcane override function getFragmentCode() : String

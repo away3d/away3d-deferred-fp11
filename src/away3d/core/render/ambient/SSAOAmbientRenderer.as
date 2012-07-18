@@ -25,7 +25,7 @@ package away3d.core.render.ambient
 			initDistrKernel();
 			_grainTexture = DitherTextureModel.getInstance().getTexture(4);
 			// grain multiplier X, grain multiplier Y , uv conversion, 0
-			_data = new <Number>[200, 0, .5, 0,
+			_data = new <Number>[200, 200, .5, 0,
 								// uv conversion scale, ssao offset
 								0, 0, 0, .5,
 								// sample radius, depth offset, average samples
