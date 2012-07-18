@@ -24,6 +24,7 @@ package away3d.materials.pass
 		private var _specularMap : Texture2DBase;
 		private var _alphaThreshold : Number = 0;
 		private var _alphaMask : Texture2DBase;
+		private var _specularMapIndex : uint;
 
 		public function DeferredSpecularPass()
 		{
@@ -76,19 +77,6 @@ package away3d.materials.pass
 			_specularMap = value;
 		}
 
-		arcane override function invalidateShaderProgram(updateMaterial : Boolean = true) : void
-		{
-			super.invalidateShaderProgram(updateMaterial);
-			if (_specularMap) {
-				_numUsedTextures = _alphaThreshold > 0? 2 : 1;
-				_numUsedStreams = 2;
-			}
-			else {
-				_numUsedTextures = _alphaThreshold > 0? 1 : 0;
-				_numUsedStreams = _alphaThreshold > 0? 2 : 1;
-			}
-		}
-
 		public function get gloss() : Number
 		{
 			return _gloss;
@@ -125,11 +113,13 @@ package away3d.materials.pass
 		{
 			var code : String = animatorCode;
 
+			_numUsedStreams = 1;
 			// project
 			code += "m44 vt1, vt0, vc0		\n" +
 					"mul op, vt1, vc4\n";
 
 			if (_specularMap || _alphaThreshold > 0) {
+				_numUsedStreams = 2;
 				code += "mov v0, va1";
 			}
 
@@ -142,17 +132,22 @@ package away3d.materials.pass
 			var filter : String;
 			var code : String = "";
 
+			_numUsedTextures = 0;
+
 			if (_smooth) filter = _mipmap ? "linear,miplinear" : "linear";
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
 			if (_alphaThreshold > 0) {
-				code += "tex ft0, v0, fs1 <2d,"+filter+","+wrap+">\n" +
+				_numUsedTextures = 1;
+				code += "tex ft0, v0, fs0 <2d,"+filter+","+wrap+">\n" +
 						"sub ft0.w, ft0.w, fc0.w\n" +
 						"kil ft0.w\n";
 			}
 
 			if (_specularMap) {
-				code +=	"tex ft0, v0, fs0 <2d,"+filter+","+wrap+">\n" +
+				_specularMapIndex = _numUsedTextures++;
+				var reg : String = "fs"+_specularMapIndex;
+				code +=	"tex ft0, v0, "+reg+" <2d,"+filter+","+wrap+">\n" +
 						"mul oc, ft0, fc0\n";
 
 			}
@@ -166,14 +161,8 @@ package away3d.materials.pass
 		{
 			super.activate(stage3DProxy, camera, textureRatioX, textureRatioY);
 			stage3DProxy._context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _data,  1);
-			if (_specularMap) stage3DProxy.setTextureAt(0, _specularMap.getTextureForStage3D(stage3DProxy));
-			if (_alphaThreshold > 0) stage3DProxy.setTextureAt(1, _alphaMask.getTextureForStage3D(stage3DProxy));
-		}
-
-		arcane override function deactivate(stage3DProxy : Stage3DProxy) : void
-		{
-			super.deactivate(stage3DProxy);
-			if (_alphaThreshold > 0) stage3DProxy.setTextureAt(1, null);
+			if (_specularMap) stage3DProxy.setTextureAt(_specularMapIndex, _specularMap.getTextureForStage3D(stage3DProxy));
+			if (_alphaThreshold > 0) stage3DProxy.setTextureAt(0, _alphaMask.getTextureForStage3D(stage3DProxy));
 		}
 
 		arcane override function render(renderable : IRenderable, stage3DProxy : Stage3DProxy, camera : Camera3D, lightPicker : LightPickerBase) : void

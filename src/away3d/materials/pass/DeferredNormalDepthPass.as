@@ -11,7 +11,6 @@ package away3d.materials.pass
 	import flash.display3D.Context3DProgramType;
 	import flash.display3D.Context3DVertexBufferFormat;
 	import flash.geom.Matrix3D;
-	import flash.geom.Vector3D;
 
 	use namespace arcane;
 
@@ -23,6 +22,8 @@ package away3d.materials.pass
 		private var _viewMatrix : Matrix3D = new Matrix3D();
 		private var _alphaThreshold : Number = 0;
 		private var _alphaMask : Texture2DBase;
+		private var _uvIndex : int;
+		private var _alphaMaskIndex : int;
 
 		public function DeferredNormalDepthPass()
 		{
@@ -84,15 +85,11 @@ package away3d.materials.pass
 			super.invalidateShaderProgram(updateMaterial);
 
 			if (_normalMap) {
-				_numUsedTextures = _alphaThreshold > 0? 2 : 1;
-				_numUsedStreams = 4;
 				_numUsedVertexConstants = 9;
 				_animatableAttributes = ["va0", "va1", "va2" ];
 				_animationTargetRegisters = ["vt0", "vt1", "vt2" ];
 			}
 			else {
-				_numUsedTextures = _alphaThreshold > 0? 1 : 0;
-				_numUsedStreams = _alphaThreshold > 0? 3 : 2;
 				_numUsedVertexConstants = 5;
 				_animatableAttributes = ["va0", "va1"];
 				_animationTargetRegisters = ["vt0", "vt1"];
@@ -119,6 +116,8 @@ package away3d.materials.pass
 		{
 			var code : String = animatorCode;
 
+			_numUsedStreams = 2;	// positions + normals
+
 			code += "m33 v0.xyz, vt1, vc9\n" +
 					"mov v0.w, va1.w	\n" +
 				// send view coord for linear depth
@@ -128,7 +127,9 @@ package away3d.materials.pass
 					"mul op, vt2, vc4\n";
 
 			if (_alphaThreshold > 0) {
-				code += "mov v2, va3\n";
+				_numUsedStreams = 3;	// uvs
+				_uvIndex = 2;
+				code += "mov v2, va2\n";
 			}
 
 			return code;
@@ -139,11 +140,13 @@ package away3d.materials.pass
 			var wrap : String = _repeat ? "wrap" : "clamp";
 			var filter : String;
 
+			_numUsedTextures = 0;
+
 			if (_smooth) filter = _mipmap ? "linear,miplinear" : "linear";
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
 			var code : String =
-					"nrm ft0.xyz, v0.xyz\n" +
+							"nrm ft0.xyz, v0.xyz\n" +
 						// encode normal
 							"mul ft1.xy, ft0.xy, fc0.zz\n" +
 							"add ft1.xy, ft1.xy, fc0.zz\n" +
@@ -157,7 +160,9 @@ package away3d.materials.pass
 							"sub ft1.z, ft1.z, ft2.z\n";
 
 			if (_alphaThreshold > 0) {
-				code +=	"tex ft3, v2, fs1 <2d,"+filter+","+wrap+">\n" +
+				_numUsedTextures = 1;
+				_alphaMaskIndex = 0;
+				code +=	"tex ft3, v2, fs0 <2d,"+filter+","+wrap+">\n" +
 						"sub ft3.w, ft3.w, fc1.y\n" +
 						"kil ft3.w\n";
 			}
@@ -170,6 +175,9 @@ package away3d.materials.pass
 		private function getNormalMapVertexCode(animatorCode : String) : String
 		{
 			var code : String = animatorCode;
+
+			_numUsedStreams = 4;
+			_uvIndex = 3;
 
 			// view-space position
 			code +=	"m44 v4, vt0, vc5	\n" +
@@ -211,6 +219,8 @@ package away3d.materials.pass
 			var wrap : String = _repeat ? "wrap" : "clamp";
 			var filter : String;
 
+			_numUsedTextures = 1;
+
 			if (_smooth) filter = _mipmap ? "linear,miplinear" : "linear";
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
@@ -239,6 +249,8 @@ package away3d.materials.pass
 					"sub ft3.z, ft3.z, ft2.z\n";
 
 			if (_alphaThreshold > 0) {
+				_alphaMaskIndex = 1;
+				_numUsedTextures = 2;
 				code +=	"tex ft1, v3, fs1 <2d,"+filter+","+wrap+">\n" +
 						"sub ft1.w, ft1.w, fc1.y\n" +
 						"kil ft1.w\n";
@@ -256,21 +268,11 @@ package away3d.materials.pass
 			_data[3] = 1/camera.lens.far;
 			stage3DProxy._context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _data, 2);
 
-			if (_normalMap) {
+			if (_normalMap)
 				stage3DProxy.setTextureAt(0, _normalMap.getTextureForStage3D(stage3DProxy));
-			}
 
-			if (_alphaThreshold > 0) {
-				stage3DProxy.setTextureAt(1, _alphaMask.getTextureForStage3D(stage3DProxy));
-			}
-		}
-
-
-		arcane override function deactivate(stage3DProxy : Stage3DProxy) : void
-		{
-			super.deactivate(stage3DProxy);
 			if (_alphaThreshold > 0)
-				stage3DProxy.setTextureAt(1, null);
+				stage3DProxy.setTextureAt(_alphaMaskIndex, _alphaMask.getTextureForStage3D(stage3DProxy));
 		}
 
 		arcane override function render(renderable : IRenderable, stage3DProxy : Stage3DProxy, camera : Camera3D, lightPicker : LightPickerBase) : void
@@ -285,13 +287,11 @@ package away3d.materials.pass
 			stage3DProxy._context3D.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 9, _viewMatrix);
 
 
-			if (_normalMap) {
+			if (_normalMap)
 				stage3DProxy.setSimpleVertexBuffer(2, renderable.getVertexTangentBuffer(stage3DProxy), Context3DVertexBufferFormat.FLOAT_3);
-			}
 
-			if (_normalMap || _alphaThreshold > 0) {
-				stage3DProxy.setSimpleVertexBuffer(3, renderable.getUVBuffer(stage3DProxy), Context3DVertexBufferFormat.FLOAT_2);
-			}
+			if (_normalMap || _alphaThreshold > 0)
+				stage3DProxy.setSimpleVertexBuffer(_uvIndex, renderable.getUVBuffer(stage3DProxy), Context3DVertexBufferFormat.FLOAT_2);
 
 			super.render(renderable, stage3DProxy, camera, lightPicker);
 		}

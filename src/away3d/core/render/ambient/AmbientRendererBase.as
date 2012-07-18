@@ -90,9 +90,9 @@ package away3d.core.render.ambient
 
 			if (!_program) initProgram();
 
-			_context.setVertexBufferAt(0, vertexBuffer, 0, Context3DVertexBufferFormat.FLOAT_2);
-			_context.setVertexBufferAt(1, vertexBuffer, 2, Context3DVertexBufferFormat.FLOAT_2);
-			_context.setVertexBufferAt(2, vertexBuffer, 4, Context3DVertexBufferFormat.FLOAT_1);
+			_stage3DProxy.setSimpleVertexBuffer(0, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 0);
+			_stage3DProxy.setSimpleVertexBuffer(1, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 2);
+			_stage3DProxy.setSimpleVertexBuffer(2, vertexBuffer, Context3DVertexBufferFormat.FLOAT_1, 4);
 
 			_context.setTextureAt(0, normalDepthBuffer.getTextureForStage3D(_stage3DProxy));
 
@@ -105,9 +105,9 @@ package away3d.core.render.ambient
 
 			_context.drawTriangles(_rttManager.indexBuffer, 0, 2);
 
-			_context.setVertexBufferAt(0, null);
-			_context.setVertexBufferAt(1, null);
-			_context.setVertexBufferAt(2, null);
+			_stage3DProxy.setSimpleVertexBuffer(0, null, null);
+			_stage3DProxy.setSimpleVertexBuffer(1, null, null);
+			_stage3DProxy.setSimpleVertexBuffer(2, null, null);
 			_context.setTextureAt(0, null);
 		}
 

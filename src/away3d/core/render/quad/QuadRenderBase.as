@@ -57,8 +57,8 @@ package away3d.core.render.quad
 
 			if (_clearOnRender) _context.clear(.5, .5, .5, 0);
 
-			_context.setVertexBufferAt(0, vertexBuffer, 0, Context3DVertexBufferFormat.FLOAT_2);
-			_context.setVertexBufferAt(1, vertexBuffer, 2, Context3DVertexBufferFormat.FLOAT_2);
+			_stage3DProxy.setSimpleVertexBuffer(0, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 0);
+			_stage3DProxy.setSimpleVertexBuffer(1, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 2);
 
 			_stage3DProxy.setProgram(_program);
 
@@ -67,8 +67,8 @@ package away3d.core.render.quad
 
 			_context.drawTriangles(_rttManager.indexBuffer, 0, 2);
 
-			_context.setVertexBufferAt(0, null);
-			_context.setVertexBufferAt(1, null);
+			_stage3DProxy.setSimpleVertexBuffer(0, null, null);
+			_stage3DProxy.setSimpleVertexBuffer(1, null, null);
 		}
 
 		private function initProgram() : void
