@@ -411,16 +411,14 @@ package away3d.core.render
 					_copyRender.execute(_gBuffer[1], target);
 					break;
 				default:
-					// TODO: THIS WILL BECOME DIFFUSE + SPECULAR IN SEPARATE STEPS (?), DIRECT TO SCREEN/TARGET
 					renderComposite(entityCollector, target);
 			}
 		}
 
 		private function renderComposite(entityCollector : EntityCollector, target : TextureBase) : void
 		{
-			if (target) {
+			if (target)
 				_stage3DProxy.scissorRect = _rttBufferManager.renderToTextureRect;
-			}
 			else {
 				_stage3DProxy.scissorRect = null;
 				_textureRatioX = 1;
@@ -561,9 +559,8 @@ package away3d.core.render
 				_lightAccumulationBuffer1 = new RenderTexture(textureWidth, textureHeight);
 				_lightAccumulationBuffer2 = new RenderTexture(textureWidth, textureHeight);
 				_gBuffer = new Vector.<RenderTexture>(2, true);
-				for (i = 0; i < 2; ++i) {
+				for (i = 0; i < 2; ++i)
 					_gBuffer[i] = new RenderTexture(textureWidth, textureHeight);
-				}
 			}
 			else {
 				_lightAccumulationBuffer1.width = textureWidth;

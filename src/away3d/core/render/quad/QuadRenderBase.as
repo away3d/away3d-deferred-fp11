@@ -53,10 +53,11 @@ package away3d.core.render.quad
 
 			if (!_program) initProgram();
 
-			_stage3DProxy.setRenderTarget(target);
+			_stage3DProxy.setRenderTarget(target, true);
 
 			if (_clearOnRender) _context.clear(.5, .5, .5, 0);
 
+			_context.setDepthTest(false, Context3DCompareMode.LESS);
 			_stage3DProxy.setSimpleVertexBuffer(0, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 0);
 			_stage3DProxy.setSimpleVertexBuffer(1, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 2);
 
@@ -69,6 +70,7 @@ package away3d.core.render.quad
 
 			_stage3DProxy.setSimpleVertexBuffer(0, null, null);
 			_stage3DProxy.setSimpleVertexBuffer(1, null, null);
+			_context.setDepthTest(true, Context3DCompareMode.LESS);
 		}
 
 		private function initProgram() : void

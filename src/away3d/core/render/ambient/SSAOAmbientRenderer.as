@@ -29,7 +29,7 @@ package away3d.core.render.ambient
 								// uv conversion scale, ssao offset
 								0, 0, 0, .5,
 								// sample radius, depth offset, average samples
-								25, 0.00015, 1/8, 0
+								25, 0.0002, 1/8, 0
 								];
 		}
 
@@ -83,7 +83,7 @@ package away3d.core.render.ambient
 			var obscRegs : Array = [ "ft7.x", "ft7.y", "ft7.z", "ft7.w" ];
 			var sampleRayReg : String;
 
-			code += //"sub ft2.z, ft2.z, fc8.y\n"+
+			code += "sub ft2.z, ft2.z, fc8.y\n"+
 					"mul ft3, v0, fc6.xyww\n" +
 					"tex ft3, ft3, fs1 <2d, nearest, wrap>\n" +
 					"sub ft3.xyz, ft3.xyz, fc1.www\n" +
