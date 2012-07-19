@@ -51,7 +51,6 @@ package away3d.shadows
 		{
 			var decodeReg : String = getConstantRegister(numCascades, 0);
 			var dataReg : String = getConstantRegister(numCascades, 1);
-			var scaleReg : String = getConstantRegister(numCascades, 2);
 			var code : String;
 
 			code = 	"add ft0.w, ft0.z, " + dataReg + ".x\n" +
