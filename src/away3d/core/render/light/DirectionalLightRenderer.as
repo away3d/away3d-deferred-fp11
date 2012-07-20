@@ -120,6 +120,7 @@ package away3d.core.render.light
 			code = "tex ft1, v0, fs0 <2d,nearest,clamp>\n" +
 
 				// diffuse:
+					// normals:
 					"sub ft2.xy, ft1.xy, fc1.ww\n" +
 					"add ft2.xy, ft2.xy, ft2.xy\n" +
 					"mul ft2.z, ft2.x, ft2.x\n" +
@@ -128,6 +129,7 @@ package away3d.core.render.light
 					"sub ft2.z, fc0.w, ft2.z\n" + // z² = 1-(x*x+y*y)
 					"sqt ft2.z, ft2.z\n" +
 					"neg ft2.z, ft2.z\n" +
+
 					"dp3 ft3.x, ft2.xyz, fc1.xyz\n" +
 					"sat ft3.x, ft3.x\n" +
 					"mul ft7, ft3.x, fc0\n" +

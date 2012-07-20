@@ -29,7 +29,7 @@ package away3d.core.render.ambient
 								// uv conversion scale, ssao offset
 								0, 0, 0, .5,
 								// sample radius, depth offset, average samples
-								25, 0.0002, 1/8, 0
+								5, 0.0003, 1/8, 0
 								];
 		}
 

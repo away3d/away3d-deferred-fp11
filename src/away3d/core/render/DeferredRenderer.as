@@ -222,6 +222,16 @@ package away3d.core.render
 			renderLights(DeferredEntityCollector(entityCollector));
 		}
 
+		arcane function getNormalDepthBuffer() : RenderTexture
+		{
+			return _gBuffer[0];
+		}
+
+		arcane function getSpecularBuffer() : RenderTexture
+		{
+			return _gBuffer[1];
+		}
+
 		/**
 		 * Draw a list of renderables.
 		 * @param renderables The renderables to draw.
@@ -388,6 +398,11 @@ package away3d.core.render
 				_frustumCorners[k++] = frustumCorners[j++];
 				_frustumCorners[k++] = 1.0;
 			}
+		}
+
+		arcane function get frustumCorners() : Vector.<Number>
+		{
+			return _frustumCorners;
 		}
 
 		override protected function draw(entityCollector : EntityCollector, target : TextureBase) : void
