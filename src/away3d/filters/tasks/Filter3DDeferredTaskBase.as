@@ -25,7 +25,7 @@ package away3d.filters.tasks
 		public function Filter3DDeferredTaskBase(renderer : DeferredRenderer)
 		{
 			_renderer = renderer;
-			_data = new <Number>[1, 1 / 255, .5, 1, 0, 0, 0, 0];
+			_data = new <Number>[1, 1 / 255, 0, 1, 0, .5, 0, 0];
 		}
 
 		override public function activate(stage3DProxy : Stage3DProxy, camera : Camera3D, depthTexture : Texture) : void
@@ -99,7 +99,7 @@ package away3d.filters.tasks
 		private function getDecodeNormals() : String
 		{
 			// remap to [-1, 1]
-			return 	"sub ft0.xy, ft5.xy, fc0.zz\n" +
+			return 	"sub ft0.xy, ft5.xy, fc1.yy\n" +
 					"add ft0.xy, ft0.xy, ft4.xy\n" +
 
 				// z² = 1-(x*x+y*y)
@@ -115,8 +115,7 @@ package away3d.filters.tasks
 
 		private function getDecodeDepthCode() : String
 		{
-			return 	"mul ft4.xy, ft5.zw, fc0.xy\n" +
-					"add ft0.w, ft4.x, ft4.y\n";
+			return 	"dp3 ft0.w, ft5.zww, fc0.xyz\n";
 		}
 
 		private function getViewPosCode() : String

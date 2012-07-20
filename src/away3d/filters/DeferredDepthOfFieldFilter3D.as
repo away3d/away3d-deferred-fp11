@@ -16,6 +16,12 @@ package away3d.filters
 		private var _hDofTask : Filter3DeferredHDepthOfFieldTask;
 		private var _vDofTask : Filter3DDeferredVDepthOfFieldTask;
 
+		/**
+		 * Creates a new DeferredDepthOfFieldFilter3D object.
+		 * @param blurX The maximum amount of horizontal blur to apply
+		 * @param blurY The maximum amount of vertical blur to apply
+		 * @param stepSize The distance between samples. Set to -1 to auto-detect with acceptable quality.
+		 */
 		public function DeferredDepthOfFieldFilter3D(renderer : DeferredRenderer, maxBlurX : uint = 3, maxBlurY : uint = 3, stepSize:int = -1)
 		{
 			super();
@@ -25,6 +31,22 @@ package away3d.filters
 			addTask(_vDofTask);
 		}
 
+		/**
+		 * Indicates whether or not to take every sampled pixel's depth value into account. This can prevent bleeding, but is much slower.
+		 */
+		public function get smartBlur() : Boolean
+		{
+			return _hDofTask.smartBlur;
+		}
+
+		public function set smartBlur(value : Boolean) : void
+		{
+			_hDofTask.smartBlur = _vDofTask.smartBlur = value;
+		}
+
+		/**
+		 * The amount of pixels between each sample.
+		 */
 		public function get stepSize() : int
 		{
 			return _hDofTask.stepSize;
@@ -35,6 +57,9 @@ package away3d.filters
 			_vDofTask.stepSize = _hDofTask.stepSize = value;
 		}
 
+		/**
+		 * An optional target ObjectContainer3D that will be used to auto-focus on.
+		 */
 		public function get focusTarget() : ObjectContainer3D
 		{
 			return _focusTarget;
@@ -45,6 +70,9 @@ package away3d.filters
 			_focusTarget = value;
 		}
 
+		/**
+		 * The distance from the camera to the point that is in focus.
+		 */
 		public function get focusDistance() : Number
 		{
 			return _hDofTask.focusDistance;
@@ -55,6 +83,9 @@ package away3d.filters
 			_hDofTask.focusDistance = _vDofTask.focusDistance = value;
 		}
 
+		/**
+		 * The distance between the focus point and the maximum amount of blur.
+		 */
 		public function get range() : Number
 		{
 			return _hDofTask.range;
@@ -65,6 +96,9 @@ package away3d.filters
 			_vDofTask.range = _hDofTask.range = value;
 		}
 
+		/**
+		 * The maximum amount of horizontal blur.
+		 */
 		public function get maxBlurX() : uint
 		{
 			return _hDofTask.maxBlur;
@@ -75,6 +109,9 @@ package away3d.filters
 			_hDofTask.maxBlur = value;
 		}
 
+		/**
+		 * The maximum amount of vertical blur.
+		 */
 		public function get maxBlurY() : uint
 		{
 			return _vDofTask.maxBlur;
@@ -99,6 +136,7 @@ package away3d.filters
 
 		override public function setRenderTargets(mainTarget : Texture, stage3DProxy : Stage3DProxy) : void
 		{
+			super.setRenderTargets(mainTarget, stage3DProxy);
 			_hDofTask.target = _vDofTask.getMainInputTexture(stage3DProxy);
 		}
 	}

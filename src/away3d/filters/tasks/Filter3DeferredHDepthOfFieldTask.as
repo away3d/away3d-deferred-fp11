@@ -21,6 +21,7 @@ package away3d.filters.tasks
 		private var _range : Number = 1000;
 		private var _stepSize : int;
 		private var _realStepSize : Number;
+		private var _smartBlur : Boolean = false;
 
 		/**
 		 * Creates a new Filter3DHDepthOfFFieldTask
@@ -35,6 +36,18 @@ package away3d.filters.tasks
 			_maxBlur = maxBlur;
 			_customData = Vector.<Number>([0, 0, 0, 0, 0, 0, 0, 0]);
 			this.stepSize = stepSize;
+		}
+
+		public function get smartBlur() : Boolean
+		{
+			return _smartBlur;
+		}
+
+		public function set smartBlur(value : Boolean) : void
+		{
+			if (value == _smartBlur) return;
+			_smartBlur = value;
+			invalidateProgram3D();
 		}
 
 		public function get stepSize() : int
@@ -101,16 +114,38 @@ package away3d.filters.tasks
 					"mov ft4, v0\n" +
 					"sub ft4.x, ft4.x, ft6.x\n";
 
-			code += "tex ft2, ft4, fs0 <2d,linear,clamp>\n";
+			code += "tex ft2, ft4, fs0 <2d,nearest,clamp>\n";
+
+			// blur depth amount is weight for every pixel
+			if (_smartBlur) {
+				code += "mov ft6.x, ft3.z\n" +
+						"mul ft2, ft2, ft3.z\n";
+			}
 
 			for (var x : Number = 0; x <= _maxBlur; x += _realStepSize) {
 				code += "add ft4.x, ft4.x, ft6.y	\n" +
-						"tex ft5, ft4, fs0 <2d,linear,clamp>\n" +
-						"add ft2, ft2, ft5 \n";
+						"tex ft5, ft4, fs0 <2d,nearest,clamp>\n";
+
+				if (_smartBlur) {
+					code += "tex ft7, ft4, fs1 <2d,nearest,clamp>\n" +
+							"dp3 ft3.w, ft7.zww, fc0.xyz\n" +
+							"sub ft3.z, ft3.z, fc3.x			\n" + // d = d - f
+							"abs ft3.z, ft3.z\n" +
+							"mul ft3.z, ft3.z, fc3.y			\n" +
+							"sat ft3.z, ft3.z\n" +
+							"add ft6.x, ft6.x, ft3.z\n" +
+							"mul ft5, ft5, ft3.z\n";
+				}
+
+				code += "add ft2, ft2, ft5\n";
+
 				++numSamples;
 			}
 
-			code += "mul oc, ft2, fc2.z";
+			if (_smartBlur)
+				code += "div oc, ft2, ft6.x";
+			else
+				code += "mul oc, ft2, fc2.z";
 
 			_customData[2] = 1 / numSamples;
 
