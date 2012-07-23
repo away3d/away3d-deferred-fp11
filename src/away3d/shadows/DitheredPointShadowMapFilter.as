@@ -22,7 +22,7 @@ package away3d.shadows
 
 			super(2);
 
-			depthOffset = .02;
+			depthOffset = .005;
 
 			_data[5] = 1/numSamples;
 			_grainTexture = DitherTextureModel.getInstance().getTexture();
