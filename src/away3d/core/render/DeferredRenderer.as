@@ -216,10 +216,15 @@ package away3d.core.render
 
 			if (_gBufferInvalid) updateRenderTargets();
 
-			renderGBuffer(entityCollector.opaqueRenderableHead, entityCollector);
+			if (_debugMode != DeferredDebugMode.ALBEDO) {
+				renderGBuffer(entityCollector.opaqueRenderableHead, entityCollector);
 
-			_stage3DProxy.scissorRect = null;
-			renderLights(DeferredEntityCollector(entityCollector));
+				if (_debugMode != DeferredDebugMode.NONE && _debugMode != DeferredDebugMode.LIGHT_ACCUMULATION)
+					return;
+
+				_stage3DProxy.scissorRect = null;
+				renderLights(DeferredEntityCollector(entityCollector));
+			}
 		}
 
 		arcane function getNormalDepthBuffer() : RenderTexture

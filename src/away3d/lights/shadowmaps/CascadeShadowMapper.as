@@ -36,7 +36,6 @@ package away3d.lights.shadowmaps
 
 		private static var _calcMatrix : Matrix3D = new Matrix3D();
 
-		// todo: let light be set by light using setter, otherwise, user = confronted
 		public function CascadeShadowMapper(numCascades : uint = 3)
 		{
 			super();
