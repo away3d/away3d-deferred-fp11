@@ -258,9 +258,9 @@ package away3d.core.render.light
 			stage3DProxy.setTextureAt(0, _normalDepthBuffer);
 			stage3DProxy.setTextureAt(1, _specularBuffer);
 
-			context.setVertexBufferAt(0, toTextureBuffer, 0, Context3DVertexBufferFormat.FLOAT_2);
-			context.setVertexBufferAt(1, toTextureBuffer, 2, Context3DVertexBufferFormat.FLOAT_2);
-			context.setVertexBufferAt(2, toTextureBuffer, 4, Context3DVertexBufferFormat.FLOAT_1);	// indices for frustum corners
+			stage3DProxy.setSimpleVertexBuffer(0, toTextureBuffer, Context3DVertexBufferFormat.FLOAT_2, 0);
+			stage3DProxy.setSimpleVertexBuffer(1, toTextureBuffer, Context3DVertexBufferFormat.FLOAT_2, 2);
+			stage3DProxy.setSimpleVertexBuffer(2, toTextureBuffer, Context3DVertexBufferFormat.FLOAT_1, 4);	// indices for frustum corners
 
 			context.setDepthTest(false, Context3DCompareMode.ALWAYS);
 			context.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE);

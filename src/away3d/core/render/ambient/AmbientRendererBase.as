@@ -94,7 +94,7 @@ package away3d.core.render.ambient
 			_stage3DProxy.setSimpleVertexBuffer(1, vertexBuffer, Context3DVertexBufferFormat.FLOAT_2, 2);
 			_stage3DProxy.setSimpleVertexBuffer(2, vertexBuffer, Context3DVertexBufferFormat.FLOAT_1, 4);
 
-			_context.setTextureAt(0, normalDepthBuffer.getTextureForStage3D(_stage3DProxy));
+			_stage3DProxy.setTextureAt(0, normalDepthBuffer.getTextureForStage3D(_stage3DProxy));
 
 			_context.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 0, frustumCorners, 4);
 			_context.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _fragmentData, 2);
@@ -108,7 +108,7 @@ package away3d.core.render.ambient
 			_stage3DProxy.setSimpleVertexBuffer(0, null, null);
 			_stage3DProxy.setSimpleVertexBuffer(1, null, null);
 			_stage3DProxy.setSimpleVertexBuffer(2, null, null);
-			_context.setTextureAt(0, null);
+			_stage3DProxy.setTextureAt(0, null);
 		}
 
 		private function initProgram() : void
