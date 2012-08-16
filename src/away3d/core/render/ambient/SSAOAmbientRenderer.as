@@ -99,13 +99,14 @@ package away3d.core.render.ambient
 			var sampleRayReg : String;
 
 			code += "sub ft2.z, ft2.z, fc8.y\n"+
+					"add ft2.z, ft2.z, fc8.w\n" +
 					"mul ft3, v0, fc6.xyww\n" +
-					"tex ft3, ft3, fs1 <2d, nearest, clamp>\n" +
+					"tex ft3, ft3, fs1 <2d, nearest, repeat>\n" +
 					"sub ft3.xyz, ft3.xyz, fc1.www\n" +
 					"nrm ft3.xyz, ft3.xyz\n" +
 					// random plane normal in ft3
 
-					// need this later
+					// need this for first m44 operation
 					"mov ft4.w, fc0.x\n";
 
 			var k : uint;
@@ -127,7 +128,6 @@ package away3d.core.render.ambient
 							"slt ft5.x, ft5.x, fc6.w\n" +	// if < 0, add normal
 							"mul ft5.xyz, ft5.x, ft1.xyz\n" +
 							"add ft4.xyz, ft4.xyz, ft5.xyz\n";
-							"mov ft4.xyz, ft5.xxx\n";
 
 					// set to sample radius and add to view pos
 					code += "mul ft4.xyz, ft4.xyz, fc8.x\n" +

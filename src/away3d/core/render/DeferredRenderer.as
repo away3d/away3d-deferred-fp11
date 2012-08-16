@@ -220,7 +220,7 @@ package away3d.core.render
 			if (_debugMode != DeferredDebugMode.ALBEDO) {
 				renderGBuffer(entityCollector.opaqueRenderableHead, entityCollector);
 
-				if (_debugMode != DeferredDebugMode.NONE && _debugMode != DeferredDebugMode.LIGHT_ACCUMULATION)
+				if (_debugMode != DeferredDebugMode.NONE && _debugMode != DeferredDebugMode.LIGHT_ACCUMULATION && _debugMode != DeferredDebugMode.AMBIENT_OCCLUSION)
 					return;
 
 				_stage3DProxy.scissorRect = null;
