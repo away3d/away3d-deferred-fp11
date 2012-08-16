@@ -18,7 +18,8 @@ package away3d.materials.pass
 	{
 		private var _normalMap : Texture2DBase;
 
-		private var _data : Vector.<Number>;
+		private var _fragmentData : Vector.<Number>;
+		private var _vertexData : Vector.<Number>;
 		private var _viewMatrix : Matrix3D = new Matrix3D();
 		private var _alphaThreshold : Number = 0;
 		private var _alphaMask : Texture2DBase;
@@ -28,9 +29,10 @@ package away3d.materials.pass
 		public function DeferredNormalDepthPass()
 		{
 			super();
-			_numUsedVertexConstants = 5;
+			_numUsedVertexConstants = 14;
 			// depth encode value 1 & 2, normal encode value, alpha threshold
-			_data = new <Number>[ 1, 255, .5, 0, 1/255, 0, 0, 1 ];
+			_fragmentData = new <Number>[ 1, 255, .5, 0, 1/255, 0, 0, 1 ];
+			_vertexData = new <Number>[ 1, 1, 0, 1 ];
 		}
 
 		/**
@@ -53,7 +55,7 @@ package away3d.materials.pass
 				invalidateShaderProgram();
 
 			_alphaThreshold = value;
-			_data[5] = _alphaThreshold;
+			_fragmentData[5] = _alphaThreshold;
 		}
 
 		public function get alphaMask() : Texture2DBase
@@ -121,7 +123,8 @@ package away3d.materials.pass
 			code += "m33 v0.xyz, vt1, vc9\n" +
 					"mov v0.w, va1.w	\n" +
 				// send view coord for linear depth
-					"m44 v1, vt0, vc5	\n";
+					"m44 vt1, vt0, vc5	\n" +
+					"mul v1, vt1.zzzz, vc13.xyww\n";
 			// project
 			code += "m44 vt2, vt0, vc0		\n" +
 					"mul op, vt2, vc4\n";
@@ -146,18 +149,18 @@ package away3d.materials.pass
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
 			var code : String =
+				// encode depth
+							"frc ft1.z, v1.x\n" +
+							"frc ft1.w, v1.y\n" +
+							"mul ft2.z, ft1.w, fc1.x\n" +
+							"sub ft1.z, ft1.z, ft2.z\n" +
+
 							"nrm ft0.xyz, v0.xyz\n" +
 						// encode normal
 							"mul ft1.xy, ft0.xy, fc0.zz\n" +
-							"add ft1.xy, ft1.xy, fc0.zz\n" +
+							"add ft1.xy, ft1.xy, fc0.zz\n";
 
-						// encode depth
-							"mul ft0.z, v1.z, fc0.w\n" +
-							"mul ft0.xy, ft0.z, fc0.xy\n" +
-							"frc ft1.z, ft0.x\n" +
-							"frc ft1.w, ft0.y\n" +
-							"mul ft2.z, ft1.w, fc1.x\n" +
-							"sub ft1.z, ft1.z, ft2.z\n";
+
 
 			if (_alphaThreshold > 0) {
 				_numUsedTextures = 1;
@@ -180,7 +183,8 @@ package away3d.materials.pass
 			_uvIndex = 3;
 
 			// view-space position
-			code +=	"m44 v4, vt0, vc5	\n" +
+			code +=	"m44 vt5, vt0, vc5	\n" +
+					"mul v4, vt5.zzzz, vc13.xyww	\n" +
 				// view space normal
 					"m33 vt3.xyz, vt1, vc9\n" +
 					"nrm vt3.xyz, vt3.xyz\n" +
@@ -188,18 +192,18 @@ package away3d.materials.pass
 					"m33 vt4.xyz, vt2, vc9\n" +
 					"nrm vt4.xyz, vt4.xyz\n" +
 				// calculate view space bitangent
-					"mul vt5.xyz, vt3.yzx, vt4.zxy	\n" +	// cross product (crs is broken?)
-					"mul vt6.xyz, vt3.zxy, vt4.yzx	\n" +
-					"sub vt6.xyz, vt5.xyz, vt6.xyz	\n" +
+					"crs vt6.xyz, vt3.xyz, vt4.xyz  \n" +
 
 					"mov v1.x, vt4.x	\n" +
 					"mov v1.y, vt6.x	\n" +
 					"mov v1.z, vt3.x	\n" +
 					"mov v1.w, va1.w	\n" +
+
 					"mov v2.x, vt4.y	\n" +
 					"mov v2.y, vt6.y	\n" +
 					"mov v2.z, vt3.y	\n" +
 					"mov v2.w, va1.w	\n" +
+
 					"mov v0.x, vt4.z	\n" +
 					"mov v0.y, vt6.z	\n" +
 					"mov v0.z, vt3.z	\n" +
@@ -225,7 +229,8 @@ package away3d.materials.pass
 			else filter = _mipmap ? "nearest,mipnearest" : "nearest";
 
 			// store TBN matrix
-			var code : String = "nrm ft0.xyz, v1.xyz	\n" +
+			var code : String =
+					"nrm ft0.xyz, v1.xyz	\n" +
 					"mov ft0.w, v1.w	\n" +
 					"nrm ft1.xyz, v2.xyz	\n" +
 					"nrm ft2.xyz, v0.xyz	\n" +
@@ -241,10 +246,8 @@ package away3d.materials.pass
 					"add ft3.xy, ft3.xy, fc0.zz\n" +
 
 				// encode depth
-					"mul ft0.z, v4.z, fc0.w\n" +
-					"mul ft0.xy, ft0.z, fc0.xy\n" +
-					"frc ft3.z, ft0.x\n" +
-					"frc ft3.w, ft0.y\n" +
+					"frc ft3.z, v4.x\n" +
+					"frc ft3.w, v4.y\n" +
 					"mul ft2.z, ft3.w, fc1.x\n" +
 					"sub ft3.z, ft3.z, ft2.z\n";
 
@@ -265,8 +268,10 @@ package away3d.materials.pass
 		{
 			super.activate(stage3DProxy, camera, textureRatioX, textureRatioY);
 
-			_data[3] = 1/camera.lens.far;
-			stage3DProxy._context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _data, 2);
+			_vertexData[0] = 1/camera.lens.far;
+			_vertexData[1] = 255/camera.lens.far;
+			stage3DProxy._context3D.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _fragmentData, 2);
+			stage3DProxy._context3D.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 13, _vertexData, 1);
 
 			if (_normalMap)
 				stage3DProxy.setTextureAt(0, _normalMap.getTextureForStage3D(stage3DProxy));

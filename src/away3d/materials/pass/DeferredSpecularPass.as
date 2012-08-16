@@ -115,7 +115,7 @@ package away3d.materials.pass
 
 			_numUsedStreams = 1;
 			// project
-			code += "m44 vt1, vt0, vc0		\n" +
+			code += "m44 vt1, vt0, vc0\n" +
 					"mul op, vt1, vc4\n";
 
 			if (_specularMap || _alphaThreshold > 0) {

@@ -62,6 +62,7 @@ package away3d.core.render
 
 		private var _debugMode : String = "none";
 		private var _distanceRenderer : DepthRenderer;
+		// todo: should be able to use 2 cascades in one by using 16 bit depth, reducing max resolution to 2048x1024 and passes by 2
 		private var _depthRenderer : DepthRenderer;
 		private var _planarDepthMap : RenderTexture;
 		private var _cubeDepthMap : RenderCubeTexture;

@@ -47,7 +47,7 @@ package away3d.core.render.light
 				0, 0, 0, .5,
 				// depth + specular decoding
 				1, 1/255, RenderValueRanges.MAX_SPECULAR, RenderValueRanges.MAX_GLOSS,
-				// texture normalization, near plane
+				// texture normalization, far plane
 				.5, -.5, 0.0, 0.0,
 				// 3 possible values bounds in post-projective space, far plane - near plane
 				0.04, .96, -.96, -0.04
@@ -109,7 +109,7 @@ package away3d.core.render.light
 			return	"mov op, va0\n" +
 					"mov v0, va1\n" +
 					"mov vt0, vc[va2.x]\n" +
-					// need frustum vector with z == 1, so we can scale correctly
+				// need frustum vector with z == 1, so we can scale correctly
 					"div vt0.xyz, vt0.xyz, vt0.z\n" +
 					"mov v1, vt0\n";
 		}
@@ -120,25 +120,24 @@ package away3d.core.render.light
 			code = "tex ft1, v0, fs0 <2d,nearest,clamp>\n" +
 
 				// diffuse:
-					// normals:
+				// normals:
 					"sub ft2.xy, ft1.xy, fc1.ww\n" +
 					"add ft2.xy, ft2.xy, ft2.xy\n" +
-					"mul ft2.z, ft2.x, ft2.x\n" +
-					"mul ft2.w, ft2.y, ft2.y\n" +
-					"add ft2.z, ft2.z, ft2.w\n" +
-					"sub ft2.z, fc0.w, ft2.z\n" + // z² = 1-(x*x+y*y)
+					"mov ft2.z, fc4.w\n" +
+					"dp3 ft2.z, ft2.xyz, ft2.xyz\n" +	// z² = 1-(x*x+y*y)
+					"sub ft2.z, fc0.w, ft2.z\n" +
 					"sqt ft2.z, ft2.z\n" +
 					"neg ft2.z, ft2.z\n" +
 
+				// diffuse
 					"dp3 ft3.x, ft2.xyz, fc1.xyz\n" +
 					"sat ft3.x, ft3.x\n" +
-					"mul ft7, ft3.x, fc0\n" +
+					"mul ft7, ft3.x, fc0\n" +	// multiply with color
 
 				// specular
 
 				// decode depth
 					"mul ft5.xy, ft1.zw, fc2.xy\n" +
-//					"mul ft5.y, ft1.w, fc2.y\n" +
 					"add ft6.z, ft5.x, ft5.y\n" +
 					"mul ft6.z, ft6.z, fc3.z\n" +
 				// view position in FT6
@@ -148,14 +147,13 @@ package away3d.core.render.light
 				// view vector:
 					"nrm ft4.xyz, v1.xyz\n" +
 					"mov ft4.w, v1.w\n" +
-					"neg ft4.xyz, ft4.xyz\n" +
 				// half vector
-					"add ft4.xyz, fc1.xyz, ft4.xyz\n" +
+					"sub ft4.xyz, fc1.xyz, ft4.xyz\n" +
 					"nrm ft4.xyz, ft4.xyz\n" +
 					"dp3 ft4.w, ft2.xyz, ft4.xyz\n" +
 					"sat ft4.w, ft4.w\n" +
 
-				// only support monochrome specularity
+				// only support monochrome specularity (color of total light will be applied later)
 					"tex ft5, v0, fs1 <2d,nearest,clamp>\n" +
 					"mul ft5.x, ft5.x, fc2.z\n" +
 					"mul ft5.y, ft5.y, fc2.w\n" +
@@ -203,15 +201,25 @@ package away3d.core.render.light
 				else {
 					code += "m44 ft1, ft6, " + projMatrix + "\n";
 
+					// todo: should be able to do this hugely in parallel by calculating slts and sges in a loop
+					// and storing results in xyzw resp. for each cascade
+					// if storing min test results in ft3, max test results in ft4
+					// should be able to multiply results together
+					// can also somewhat parallize per two
+					// so support either 1, 2 or 4 cascades
+
+
 					// calculate if in texturemap (result == 0 or 1, only 1 for a single partition)
 					code += "sge ft4.z, ft1.x, " + minBounds[boundIndex] + "\n" + // z = x > minX, w = y > minY
 							"sge ft4.w, ft1.y, " + minBounds[boundIndex+1] + "\n" + // z = x > minX, w = y > minY
-							"mul ft4.z, ft4.z, ft4.w\n" + // z = z && w (x > minX && y > minY)
-							"slt ft3.z, ft1.x, " + maxBounds[boundIndex] + "\n" + // z = x < maxX, w = y < maxY
-							"slt ft3.w, ft1.y, " + maxBounds[boundIndex+1] + "\n" + // z = x < maxX, w = y < maxY
-							"mul ft3.z, ft3.z, ft3.w\n" +
+							"sge ft4.x, " + maxBounds[boundIndex] + ", ft1.x \n" + // z = x < maxX, w = y < maxY
+							"sge ft4.y, " + maxBounds[boundIndex+1] + ", ft1.y\n" + // z = x < maxX, w = y < maxY
 
-							"mul ft4.z, ft4.z, ft3.z\n";	// 1 if all are in bounds
+						// parall. per 2?
+							"mul ft4.xz, ft4.xz, ft4.yw\n" +
+
+						// parall. per 4
+							"mul ft4.z, ft4.z, ft4.x\n";	// 1 if all are in bounds, so in this quad
 
 					// since we're going from low to high quality, if 1, we must multiply previous total with 0 so we're only using the current higher quality result
 					// if 0, we keep the total (= multiply with 1)
@@ -247,7 +255,7 @@ package away3d.core.render.light
 			return code;
 		}
 
-		private function activate(stage3DProxy : Stage3DProxy, sourceBuffer : TextureBase) : void
+		private function activate(stage3DProxy : Stage3DProxy) : void
 		{
 			var context : Context3D = stage3DProxy._context3D;
 			var toTextureBuffer : VertexBuffer3D;
@@ -278,7 +286,7 @@ package away3d.core.render.light
 			var numCascades : uint = shadowMapper? shadowMapper.numCascades : 0;
 			var context : Context3D = stage3DProxy.context3D;
 
-			activate(stage3DProxy, sourceBuffer);
+			activate(stage3DProxy);
 
 			context.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 0, frustumCorners, 4);
 

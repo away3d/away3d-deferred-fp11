@@ -54,7 +54,7 @@ package away3d.lights.shadowmaps
 			if (value < 0) value = 0;
 			else if (value > 1) value = 1;
 
-			if (index >= _numCascades) throw new Error("index must be smaller then the number of cascades!");
+			if (index >= _numCascades) throw new Error("index must be smaller than the number of cascades!");
 
 			_splitRatios[index] = value;
 		}
@@ -68,7 +68,6 @@ package away3d.lights.shadowmaps
 		{
 			// todo: will be calculated properly at some point
 			_localFrustum = new Vector.<Number>(8 * 3);
-			// todo: calculate better splits?
 			_splitRatios = new Vector.<Number>(4, true);
 
 			var s : Number = 1;

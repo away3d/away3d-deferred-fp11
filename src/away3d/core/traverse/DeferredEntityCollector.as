@@ -13,19 +13,15 @@ package away3d.core.traverse
 	{
 		private var _directionalCasterLights : Vector.<DirectionalLight>;
 		private var _pointCasterLights : Vector.<PointLight>;
-		private var _deferredRenderables : Vector.<IRenderable>;
 
 		private var _numDirCasters : uint;
 		private var _numPointCasters : uint;
-
-		private var _numDeferred : uint;
 
 		public function DeferredEntityCollector()
 		{
 			super();
 			_directionalCasterLights = new Vector.<DirectionalLight>();
 			_pointCasterLights = new Vector.<PointLight>();
-			_deferredRenderables = new Vector.<IRenderable>();
 		}
 
 		public function get directionalCasterLights() : Vector.<DirectionalLight>
@@ -62,7 +58,6 @@ package away3d.core.traverse
 			super.clear();
 			if (_numPointCasters > 0) _pointCasterLights.length = _numPointCasters = 0;
 			if (_numDirCasters > 0) _directionalCasterLights.length = _numDirCasters = 0;
-			if (_numDeferred > 0) _deferredRenderables.length = _numDeferred = 0;
 		}
 	}
 }

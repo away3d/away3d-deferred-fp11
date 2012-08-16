@@ -18,19 +18,34 @@ package away3d.core.render.ambient
 		private var _grainTexture : Texture2DBase;
 		private var _data : Vector.<Number>;
 		private var _attenuate : Boolean = false;
+		private var _highQuality : Boolean;
 
-		public function SSAOAmbientRenderer()
+		public function SSAOAmbientRenderer(highQuality : Boolean = false)
 		{
 			super();
 			initDistrKernel();
 			_grainTexture = DitherTextureModel.getInstance().getTexture(4);
 			// grain multiplier X, grain multiplier Y , uv conversion, 0
+			var avg : Number = highQuality? 1/8 : 1/4;
 			_data = new <Number>[200, 200, .5, 0,
 								// uv conversion scale, ssao offset
 								0, 0, 0, .5,
 								// sample radius, depth offset, average samples
-								5, 0.0003, 1/8, 0
+								5, 0.0003, avg, 0
 								];
+			_highQuality = highQuality;
+		}
+
+		public function get highQuality() : Boolean
+		{
+			return _highQuality;
+		}
+
+		public function set highQuality(value : Boolean) : void
+		{
+			if (value == _highQuality) return;
+			_highQuality = value;
+			invalidateShader();
 		}
 
 		public function get sampleRadius() : Number
@@ -85,7 +100,7 @@ package away3d.core.render.ambient
 
 			code += "sub ft2.z, ft2.z, fc8.y\n"+
 					"mul ft3, v0, fc6.xyww\n" +
-					"tex ft3, ft3, fs1 <2d, nearest, wrap>\n" +
+					"tex ft3, ft3, fs1 <2d, nearest, clamp>\n" +
 					"sub ft3.xyz, ft3.xyz, fc1.www\n" +
 					"nrm ft3.xyz, ft3.xyz\n" +
 					// random plane normal in ft3
@@ -95,7 +110,8 @@ package away3d.core.render.ambient
 
 			var k : uint;
 			var tgt : String;
-			for (var i : uint = 0; i < 2; ++i) {
+			var iterations : int = _highQuality? 2 : 1;
+			for (var i : uint = 0; i < iterations; ++i) {
 				for (var j : uint = 0; j < 4; ++j) {
 					sampleRayReg = "fc"+((k++)+9);
 					tgt = obscRegs[j];
