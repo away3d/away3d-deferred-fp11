@@ -31,9 +31,19 @@ package away3d.core.render.ambient
 								// uv conversion scale, ssao offset
 								0, 0, 0, .5,
 								// sample radius, depth offset, average samples
-								5, 0.0003, avg, 0
+								5, 0.001, avg, 0
 								];
 			_highQuality = highQuality;
+		}
+
+		public function get depthOffset() : Number
+		{
+			return _data[9];
+		}
+
+		public function set depthOffset(value : Number) : void
+		{
+			_data[9] = value;
 		}
 
 		public function get highQuality() : Boolean

@@ -466,6 +466,7 @@ package away3d.core.render
 			_context.setStencilActions();
 
 			drawForwardBlended(entityCollector);
+			_context.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
 
 			_stage3DProxy.scissorRect = null;
 		}

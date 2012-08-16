@@ -7,15 +7,11 @@ package away3d.lights.shadowmaps
 	import away3d.core.math.Matrix3DUtils;
 	import away3d.core.render.DepthRenderer;
 	import away3d.lights.DirectionalLight;
-	import away3d.lights.DirectionalLight;
-	import away3d.lights.LightBase;
 
 	import flash.display3D.textures.TextureBase;
 	import flash.geom.Matrix3D;
 	import flash.geom.Rectangle;
 	import flash.geom.Vector3D;
-
-	import spark.primitives.Rect;
 
 	use namespace arcane;
 
@@ -123,13 +119,10 @@ package away3d.lights.shadowmaps
 			for (var i : int = 0; i < _numCascades; ++i) {
 				_casterCollector.clear();
 				_casterCollector.camera = _depthCameras[i];
-//				_depthLenses[i].matrix = _depthLenses[i].matrix;
 				scene.traversePartitions(_casterCollector);
 				// only clear buffer once
 				renderer.clearOnRender = i == 0;
 				renderer.render(_casterCollector, target, _scissorRects[i], 0);
-
-//				_depthLenses[i].matrix = _depthLenses[i].matrix;
 				_casterCollector.cleanUp();
 			}
 			// be a gentleman and restore before returning
@@ -157,9 +150,8 @@ package away3d.lights.shadowmaps
 			for (var i : int = 0; i < _numCascades; ++i) {
 				matrix = _depthLenses[i].matrix;
 
-				if (i == 0) {
+				if (i == 0)
 					updateProjectionPartition(matrix, 0, _splitRatios[0], _texOffsetsX[i], _texOffsetsY[i]);
-				}
 				else {
 					_depthCameras[i].transform = _depthCameras[0].transform;
 					updateProjectionPartition(matrix, _splitRatios[i-1], _splitRatios[i], _texOffsetsX[i], _texOffsetsY[i]);
@@ -175,9 +167,9 @@ package away3d.lights.shadowmaps
 			var dir : Vector3D = DirectionalLight(_light).sceneDirection;
 			var depthCam : Camera3D = _depthCameras[0];
 			depthCam.transform = _light.sceneTransform;
-			depthCam.x = viewCamera.x - dir.x * _lightOffset;
-			depthCam.y = viewCamera.y - dir.y * _lightOffset;
-			depthCam.z = viewCamera.z - dir.z * _lightOffset;
+			depthCam.x = -dir.x * _lightOffset;
+			depthCam.y = -dir.y * _lightOffset;
+			depthCam.z = -dir.z * _lightOffset;
 
 			_calcMatrix.copyFrom(depthCam.inverseSceneTransform);
 			_calcMatrix.prepend(viewCamera.sceneTransform);
@@ -188,7 +180,6 @@ package away3d.lights.shadowmaps
 		private function updateProjectionPartition(matrix : Matrix3D, minRatio : Number, maxRatio : Number, texOffsetX : Number, texOffsetY : Number) : void
 		{
 			var raw : Vector.<Number> = Matrix3DUtils.RAW_DATA_CONTAINER;
-			var d : Number;
 			var x1 : Number, y1 : Number, z1 : Number;
 			var x2 : Number, y2 : Number, z2 : Number;
 			var xN : Number, yN : Number, zN : Number;
@@ -210,42 +201,44 @@ package away3d.lights.shadowmaps
 				y2 = _localFrustum[j++] - y1;
 				zF = _localFrustum[j++];
 				xN = x1 + x2*minRatio;
-				xF = x1 + x2*maxRatio;
 				yN = y1 + y2*minRatio;
+				xF = x1 + x2*maxRatio;
 				yF = y1 + y2*maxRatio;
 				if (xN < minX) minX = xN;
 				if (xN > maxX) maxX = xN;
 				if (yN < minY) minY = yN;
 				if (yN > maxY) maxY = yN;
-				if (zN < minZ) minZ = zN;
 				if (zN > maxZ) maxZ = zN;
 				if (xF < minX) minX = xF;
 				if (xF > maxX) maxX = xF;
 				if (yF < minY) minY = yF;
 				if (yF > maxY) maxY = yF;
-				if (zF < minZ) minZ = zF;
 				if (zF > maxZ) maxZ = zF;
 			}
 
-			// counter shadow map swimming
-			scaleX = 64 / Math.ceil((maxX - minX)*32);
-			scaleY = 64 / Math.ceil((maxY - minY)*32);
+			minZ = 10;
+
+			var quantizeFactor : Number = 128;
+			var invQuantizeFactor : Number = 1/quantizeFactor;
+
+			scaleX = 2*invQuantizeFactor/Math.ceil((maxX - minX)*invQuantizeFactor);
+			scaleY = 2*invQuantizeFactor/Math.ceil((maxY - minY)*invQuantizeFactor);
+
 			offsX = Math.ceil(-.5*(maxX + minX)*scaleX*halfSize) / halfSize;
 			offsY = Math.ceil(-.5*(maxY + minY)*scaleY*halfSize) / halfSize;
 
-			minZ = 10;
+			var d : Number = 1/(maxZ - minZ);
 
-			d = 1 / (maxZ - minZ);
-			raw[0] = raw[5] = raw[15] = 1;
+			raw[0] = scaleX;
+			raw[5] = scaleY;
 			raw[10] = d;
+			raw[12] = offsX;
+			raw[13] = offsY;
 			raw[14] = -minZ * d;
-			raw[1] = raw[2] = raw[3] = raw[4] = raw[6] = raw[7] = raw[8] = raw[9] = raw[11] = raw[12] = raw[13] = 0;
+			raw[15] = 1;
+			raw[1] = raw[2] = raw[3] = raw[4] = raw[6] = raw[7] = raw[8] = raw[9] = raw[11] = 0;
 
-			// todo: optimize this
 			matrix.copyRawDataFrom(raw);
-			matrix.prependTranslation(offsX, offsY, 0);
-			matrix.prependScale(scaleX, scaleY, 1);
-			// need some padding for filtering
 			matrix.appendScale(.96, .96, 1);
 			matrix.appendTranslation(texOffsetX, texOffsetY, 0);
 			matrix.appendScale(.5, .5, 1);
