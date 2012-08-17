@@ -31,12 +31,16 @@ package away3d.lights.shadowmaps
 		private var _texOffsetsY : Vector.<Number>;
 
 		private static var _calcMatrix : Matrix3D = new Matrix3D();
+		arcane var _projectionXScales : Vector.<Number>;
+		arcane var _projectionYScales : Vector.<Number>;
 
 		public function CascadeShadowMapper(numCascades : uint = 3)
 		{
 			super();
 			if (numCascades < 1 || numCascades > 4) throw new Error("numCascades must be an integer between 1 and 4");
 			_numCascades = numCascades;
+			_projectionXScales = new Vector.<Number>(numCascades, true);
+			_projectionYScales = new Vector.<Number>(numCascades, true);
 			init();
 		}
 
@@ -151,10 +155,10 @@ package away3d.lights.shadowmaps
 				matrix = _depthLenses[i].matrix;
 
 				if (i == 0)
-					updateProjectionPartition(matrix, 0, _splitRatios[0], _texOffsetsX[i], _texOffsetsY[i]);
+					updateProjectionPartition(i, matrix, 0, _splitRatios[0], _texOffsetsX[i], _texOffsetsY[i]);
 				else {
 					_depthCameras[i].transform = _depthCameras[0].transform;
-					updateProjectionPartition(matrix, _splitRatios[i-1], _splitRatios[i], _texOffsetsX[i], _texOffsetsY[i]);
+					updateProjectionPartition(i,  matrix, _splitRatios[i-1], _splitRatios[i], _texOffsetsX[i], _texOffsetsY[i]);
 				}
 
 				_depthLenses[i].matrix = matrix;
@@ -177,7 +181,7 @@ package away3d.lights.shadowmaps
 
 		}
 
-		private function updateProjectionPartition(matrix : Matrix3D, minRatio : Number, maxRatio : Number, texOffsetX : Number, texOffsetY : Number) : void
+		private function updateProjectionPartition(index : uint, matrix : Matrix3D, minRatio : Number, maxRatio : Number, texOffsetX : Number, texOffsetY : Number) : void
 		{
 			var raw : Vector.<Number> = Matrix3DUtils.RAW_DATA_CONTAINER;
 			var x1 : Number, y1 : Number, z1 : Number;
@@ -242,6 +246,9 @@ package away3d.lights.shadowmaps
 			matrix.appendScale(.96, .96, 1);
 			matrix.appendTranslation(texOffsetX, texOffsetY, 0);
 			matrix.appendScale(.5, .5, 1);
+
+			_projectionXScales[index] = scaleX*.48;	// *.96*.5
+			_projectionYScales[index] = scaleY*.48;
 		}
 	}
 }

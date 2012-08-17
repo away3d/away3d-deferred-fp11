@@ -38,15 +38,16 @@ package away3d.shadows
 
 		public function get radius() : Number
 		{
-			return _data[6];
+			return _data[6]*.5;
 		}
 
 		public function set radius(value : Number) : void
 		{
-			_data[6] = value;
+			_data[6] = value*2;
 		}
 
 		// todo: consider using screen-space coordinates for the dither sample coords, so the grain can stay constant
+		// todo: rewrite this to match Dither METHOD
 		override arcane function getSampleCode(numCascades : uint) : String
 		{
 			var decodeReg : String = getConstantRegister(numCascades, 0);
@@ -58,10 +59,12 @@ package away3d.shadows
 
 			for (var i : uint = 0; i < _numSamples; ++i) {
 				code += "tex ft3, ft6, fs4 <2d, nearest, wrap>\n" +
-						"mul ft3.xy, ft3.xy, fc3.xx\n" +
-						"add ft3.xy, ft3.xy, ft3.xy\n" +
+						// map to (-radius, radius) range
+						"sub ft3.xy, ft3.xy, fc3.xx\n" +
 						"mul ft3.xy, ft3.xy, " + dataReg + ".z\n" +
-						"mul ft3.xy, ft3.xy, ft5.xy\n" +
+						// scale for quadrant
+						"mul ft3.xy, ft3.xy, ft5.xx\n" +
+						// add to sample position
 						"add ft3.xy, ft3.xy, ft0.xy\n" +
 						"tex ft1, ft3.xy, fs3 <2d, nearest, clamp>\n" +
 						"dp4 ft1.z, ft1, " + decodeReg  + "\n";

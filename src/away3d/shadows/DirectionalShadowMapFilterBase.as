@@ -65,14 +65,15 @@ package away3d.shadows
 		 * Implement this for joy. Some things must ye know
 		 * input registers:
 		 * fs3 - shadow map texture
-		 * ft0 - sample coordinates
+		 * ft0 - center sample coordinates
+		 * fc3.xy - (.5, -.5)
 		 * fc[offset] (getDirectionalSampleCode(0)) contains depth map decode data
 		 * fc[offset+1].x (getDirectionalSampleCode(1)+".x") contains epsilon offset
-		 * ft6 - view position
+		 * ft6 - view position (does not need to be kept)
 		 * ft5.xy --> scale of the current projection (used to keep neighbourhood samples in the same radius across splits), only if needsProjectionScale is set to true
 		 *
 		 * output register
-		 * ft0 (xyz): shadow colour (typically 0-1)
+		 * ft0.w: shadow amount (0 if in shadow, 1 if not)
 		 */
 		arcane function getSampleCode(numCascades : uint) : String
 		{

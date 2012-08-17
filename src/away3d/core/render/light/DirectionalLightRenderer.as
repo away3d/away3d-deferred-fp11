@@ -50,7 +50,9 @@ package away3d.core.render.light
 				// texture normalization, far plane
 				.5, -.5, 0.0, 0.0,
 				// 3 possible values bounds in post-projective space, far plane - near plane
-				0.04, .96, -.96, -0.04
+				0.04, .96, -.96, -0.04,
+				// 4*2 projection scales
+				0, 0, 0, 0, 0, 0, 0, 0
 			];
 			_programs = new Vector.<Program3D>(5, true);
 			_shadowMapFilter = new HardDirectionalShadowMapFilter();
@@ -176,7 +178,7 @@ package away3d.core.render.light
 
 		private function generateShadowMapCode(numCascades : uint) : String
 		{
-			var projIndex : int = 5;
+			var projIndex : int = 7;
 			var projMatrix : String;
 			var code : String = "";
 			var boundsReg : String = "fc4";
@@ -184,6 +186,10 @@ package away3d.core.render.light
 			var minBounds : Vector.<String> = new <String>[	boundsReg + ".x", boundsReg + ".z", boundsReg + ".z", boundsReg + ".z", boundsReg + ".x", boundsReg + ".x", boundsReg + ".z", boundsReg + ".x" ];
 			var maxBounds : Vector.<String> = new <String>[	boundsReg + ".y", boundsReg + ".w", boundsReg + ".w", boundsReg + ".w", boundsReg + ".y", boundsReg + ".y", boundsReg + ".w", boundsReg + ".y" ];
 			var boundIndex : int = (4-numCascades)*2;
+			var scaleRegisters : Array = [ 	"fc5.xy", "fc5.zw",
+											"fc6.xy", "fc6.zw"
+										];
+
 
 			for (var i : int = 0; i < numCascades; ++i) {
 				projMatrix = "fc" + projIndex;
@@ -193,10 +199,8 @@ package away3d.core.render.light
 					// calculate projection coord for partition
 					code += "m44 ft0, ft6, " + projMatrix + "\n";
 
-					if (_shadowMapFilter.needsProjectionScale) {
-						code += "mov ft5.x, " + projMatrix + ".x\n" +
-								"mov ft5.y, fc" + (projIndex+1) + ".y\n";
-					}
+					if (_shadowMapFilter.needsProjectionScale)
+						code += "mov ft5.xy, " + scaleRegisters[i] + "\n";
 				}
 				else {
 					code += "m44 ft1, ft6, " + projMatrix + "\n";
@@ -235,9 +239,7 @@ package away3d.core.render.light
 							"add ft0, ft0, ft1\n";
 
 					if (_shadowMapFilter.needsProjectionScale) {
-						code += "mov ft5.z, " + projMatrix + ".x\n" +
-								"mov ft5.w, fc" + (projIndex+1) + ".y\n" +
-								"mul ft5.zw, ft5.zw, ft4.z\n" +
+						code += "mul ft5.zw, " + scaleRegisters[i] + ", ft4.z\n" +
 								"add ft5.xy, ft5.xy, ft5.zw\n";
 					}
 				}
@@ -285,13 +287,13 @@ package away3d.core.render.light
 			var len : Number = -1 / Math.sqrt(dx * dx + dy * dy + dz * dz);
 			var numCascades : uint = shadowMapper? shadowMapper.numCascades : 0;
 			var context : Context3D = stage3DProxy.context3D;
+			var i : uint, j : uint, k : uint;
 
 			activate(stage3DProxy);
 
 			context.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 0, frustumCorners, 4);
 
 			if (shadowMapper) {
-				var k : uint, j : uint;
 				var cameraScene : Matrix3D = camera.sceneTransform;
 
 				stage3DProxy.setTextureAt(2, sourceBuffer);
@@ -300,12 +302,18 @@ package away3d.core.render.light
 
 				// low res first
 				k = numCascades;
-				j = 5;
-				for (var i : uint = 0; i < numCascades; ++i) {
+				j = 7;
+				var l : uint = 20;
+				for (i = 0; i < numCascades; ++i) {
 					_matrix.copyFrom(cameraScene);
 					_matrix.append(shadowMapper.getDepthProjections(--k));
 					context.setProgramConstantsFromMatrix(Context3DProgramType.FRAGMENT, j, _matrix, true);
+					if (_shadowMapFilter.needsProjectionScale) {
+						_data[l++] = shadowMapper._projectionXScales[k];
+						_data[l++] = shadowMapper._projectionYScales[k];
+					}
 					j += 4;
+
 				}
 			}
 
@@ -319,7 +327,7 @@ package away3d.core.render.light
 			_data[6] = dir.z * len;
 			_data[14] = camera.lens.far;
 
-			context.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _data, 5);
+			context.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, _data, 7);
 
 			if (!_programs[numCascades]) initProgram(numCascades, stage3DProxy);
 
